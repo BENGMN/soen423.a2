@@ -1,0 +1,6 @@
+
+module BoxOffice {
+	interface IBoxOffice {
+		void operation1(in string msg);
+	};
+};
