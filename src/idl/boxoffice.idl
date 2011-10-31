@@ -1,0 +1,14 @@
+// CORBA to JAVA Data Types
+// long     --> int
+// string   --> string
+// sequence --> array
+
+module common {
+	interface BoxOffice {
+		void reserve(in long customer_id, in string show_id, in long quantity);
+		void cancel(in long customer_id, in string show_id, in long qty);
+		void show(in String show_id, out long showID);
+		void allEvents(out sequence list shows);
+		void createEvent(in string event_id, in string title, in long capacity);		
+	};
+};
