@@ -5,6 +5,10 @@ import java.util.Map;
 
 import org.omg.CORBA.ORB;
 
+import udp.Exchange;
+import udp.ExchangeClient;
+import udp.IExchange;
+
 import common.BoxOfficePOA;
 import common.BoxOfficePackage.invalid_customer;
 import common.BoxOfficePackage.invalid_event;
@@ -98,5 +102,33 @@ public class BoxOfficeImpl extends BoxOfficePOA {
 			i++;
 		}
 		return all;
+	}
+
+	@Override
+	public void exchange(int customer_id, String reserved_event_id, int reserved_tickets, String desired_event_id, int desired_tickets) throws invalid_customer, invalid_event {
+		try {
+			ExchangeClient client = new ExchangeClient(1010);
+			IExchange exchange_request = new Exchange(customer_id, desired_event_id, desired_tickets);
+			client.sendData(exchange_request);
+			exchange_request = client.getData();
+			
+			if(((Exchange) exchange_request).canExchange()) {
+				cancel(customer_id, reserved_event_id, reserved_tickets);
+			}
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	@Override
+	public boolean canExchange(int customer_id, String show_id, int no_tickets) {
+		try {
+			reserve(customer_id, show_id, no_tickets);
+			return true;
+		}
+		catch(Exception e) {
+			return false;
+		}
 	}
 }
