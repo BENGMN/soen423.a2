@@ -9,12 +9,13 @@ module common {
 	    exception invalid_customer {};
 	    exception invalid_event {};
 	    
-		typedef sequence<long> events;
+		typedef sequence<string> events;
 
 		void reserve(in long customer_id, in string show_id, in long quantity) raises (invalid_customer, invalid_event);
 		void cancel(in long customer_id, in string show_id, in long qty) raises (invalid_customer, invalid_event);
-		void show(in string show_id, out long showID) raises (invalid_event);
-		void allEvents(out events all_shows);
+		long show(in string show_id) raises (invalid_event);
+		events allEvents();
 		void createEvent(in string event_id, in string title, in long capacity) raises (invalid_event);
+		void shutdown();
 	};
 };
