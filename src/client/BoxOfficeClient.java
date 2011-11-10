@@ -20,8 +20,10 @@ public class BoxOfficeClient {
 			NamingContextExt ncRef = NamingContextExtHelper.narrow(objRef);
 			boxOffImpl = BoxOfficeHelper.narrow(ncRef.resolve_str("MTL"));
 			
+			
 			// now we can call methods on the boxOffice using the boxOffImpl
-			boxOffImpl.reserve(10, "MTL101", 2);
+			System.out.println(boxOffImpl.show("MTL101"));
+			//boxOffImpl.reserve(10, "MTL100", 2);
 			
 			// shutdown nicely
 			boxOffImpl.shutdown();

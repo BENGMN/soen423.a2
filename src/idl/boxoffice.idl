@@ -17,7 +17,8 @@ module common {
 		events allEvents();
 		void createEvent(in string event_id, in string title, in long capacity) raises (invalid_event);
 		void exchange(in long customer_id, in string reserved_event_id, in long reserved_tickets, in string desired_event_id, in long desired_tickets) raises (invalid_customer, invalid_event);
-		boolean canExchange(in long customer_id, in string show_id, in long no_tickets) raises (invalid_customer, invalid_event);
+		long getUDPPort();
+		string getUDPHost();
 		void shutdown();
 	};
 };

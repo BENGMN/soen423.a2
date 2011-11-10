@@ -5,17 +5,23 @@ import java.util.Properties;
 import org.omg.CosNaming.NamingContextExt;
 import org.omg.CosNaming.NamingContextExtHelper;
 
-
 import common.BoxOffice;
 import common.BoxOfficeHelper;
 
 public class Exchange implements IExchange {
 	
 	private static final long serialVersionUID = 1L;
+	
 	private boolean exhange_ok = false;
 	private int customer_id, no_tickets;
 	private String show_id;
 	
+	/**
+	 * Exchange tickets via UDP between box-office servers
+	 * @param customer_id
+	 * @param show_id
+	 * @param no_tickets
+	 */
 	public Exchange(int customer_id, String show_id, int no_tickets) {
 		this.customer_id = customer_id;
 		this.show_id = show_id;

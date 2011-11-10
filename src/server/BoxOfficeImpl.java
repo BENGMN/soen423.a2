@@ -17,14 +17,19 @@ import domain.Event;
 
 public class BoxOfficeImpl extends BoxOfficePOA {
 
-	private ORB orb;
-	
 	// Data members needed to implement the BoxOffice interface
-	private volatile Map<String, Event>  available_shows = new HashMap<String, Event>();  // <show_id, Event>
+	private ORB orb = null;
+	private String UDPHost = null;
+	private int UDPPort = 0;
 	private String city = null;
+	private volatile Map<String, Event>  available_shows = new HashMap<String, Event>();  // <show_id, Event>
 	
-	public BoxOfficeImpl(String city) throws Exception {
+	
+	public BoxOfficeImpl(ORB orb, String city, String UDPHost, int UDPPort) throws Exception {
+		this.orb = orb;
 		this.city = city;
+		this.UDPHost = UDPHost;
+		this.UDPPort = UDPPort;
 		initialize();
 	}
 	
@@ -41,7 +46,7 @@ public class BoxOfficeImpl extends BoxOfficePOA {
 	}
 	
 	public void shutdown() {
-		orb.shutdown(false);
+		this.orb.shutdown(false);
 	}
 	
 	@Override
@@ -122,13 +127,12 @@ public class BoxOfficeImpl extends BoxOfficePOA {
 	}
 
 	@Override
-	public boolean canExchange(int customer_id, String show_id, int no_tickets) {
-		try {
-			reserve(customer_id, show_id, no_tickets);
-			return true;
-		}
-		catch(Exception e) {
-			return false;
-		}
+	public String getUDPHost() {
+		return this.UDPHost;
+	}
+	
+	@Override
+	public int getUDPPort() {
+		return this.UDPPort;
 	}
 }
