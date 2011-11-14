@@ -65,6 +65,10 @@ public class Event {
 		notifyAll();
 	}
 	
+	public int getReservation(int customer_id) {
+		return reservations.get(customer_id);
+	}
+	
 	public int availability() {
 		return this.availability;
 	}

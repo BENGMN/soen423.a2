@@ -5,15 +5,19 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 
-public class UDPServer {
+import server.BoxOfficeImpl;
+
+public class UDPServer implements Runnable {
 
 	private String host = null;
 	private int port = 0;
 	private boolean stayAlive = true;
+	private BoxOfficeImpl boxOffice = null;
 	
-	public UDPServer(String host, int port) {
+	public UDPServer(String host, int port, BoxOfficeImpl boxOffice) {
 		this.host = host;
 		this.port = port;
+		this.boxOffice = boxOffice;
 	}
 	
 	public void stop() {
@@ -36,7 +40,7 @@ public class UDPServer {
 			
 			// unmarshall the incoming data and execute the method
 			IExchange unmarshalled_data = MarshallService.unmarshall(in.getData());
-			unmarshalled_data.execute();
+			unmarshalled_data.execute(this.boxOffice);
 			
 			// send the response out
 			byte[] data_out = MarshallService.marshall(unmarshalled_data);
@@ -44,4 +48,20 @@ public class UDPServer {
 			server.send(out);
 		}
 	}
+
+	@Override
+	public void run() {
+		try {
+			start();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (ClassNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+	}
+	
+	
 }

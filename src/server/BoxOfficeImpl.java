@@ -5,35 +5,51 @@ import java.util.Map;
 
 import org.omg.CORBA.ORB;
 
-import udp.Exchange;
-import udp.ExchangeClient;
+import udp.ReservationClient;
 import udp.IExchange;
+import udp.UDPServer;
 
 import common.BoxOfficePOA;
 import common.BoxOfficePackage.invalid_customer;
 import common.BoxOfficePackage.invalid_event;
 
 import domain.Event;
+import domain.Reservation;
+import domain.ServerDetail;
 
 public class BoxOfficeImpl extends BoxOfficePOA {
 
 	// Data members needed to implement the BoxOffice interface
 	private ORB orb = null;
+	private UDPServer udpServer = null;
 	private String UDPHost = null;
 	private int UDPPort = 0;
 	private String city = null;
 	private volatile Map<String, Event>  available_shows = new HashMap<String, Event>();  // <show_id, Event>
+	private Map<String, ServerDetail> box_off_repo = new HashMap<String, ServerDetail>(); //<MTL, {host, port}>
 	
 	
 	public BoxOfficeImpl(ORB orb, String city, String UDPHost, int UDPPort) throws Exception {
 		this.orb = orb;
-		this.city = city;
+		this.city = city.toUpperCase();
 		this.UDPHost = UDPHost;
 		this.UDPPort = UDPPort;
+		this.udpServer = new UDPServer(UDPHost, UDPPort, this); // pass a reference of self to UDPServer for exchanges
 		initialize();
 	}
 	
 	private void initialize() throws Exception {
+		
+		// start up the UDP Server in a new thread
+		Thread thread = new Thread(this.udpServer);
+		thread.start();
+		
+		// Add the handles to the other box offices into the repository
+		this.box_off_repo.put("MTL", new ServerDetail("127.0.0.1", 44948));
+		this.box_off_repo.put("OTT", new ServerDetail("127.0.0.1", 44949));
+		this.box_off_repo.put("TOR", new ServerDetail("127.0.0.1", 44950));
+		
+		// Add some test data
 		for(int i = 100; i < 104; i++) {
 			String show_id    = this.city+i;
 			String show_title = "Show"+i;
@@ -47,6 +63,7 @@ public class BoxOfficeImpl extends BoxOfficePOA {
 	
 	public void shutdown() {
 		this.orb.shutdown(false);
+		this.udpServer.stop();
 	}
 	
 	@Override
@@ -111,19 +128,44 @@ public class BoxOfficeImpl extends BoxOfficePOA {
 
 	@Override
 	public void exchange(int customer_id, String reserved_event_id, int reserved_tickets, String desired_event_id, int desired_tickets) throws invalid_customer, invalid_event {
-		try {
-			ExchangeClient client = new ExchangeClient(1010);
-			IExchange exchange_request = new Exchange(customer_id, desired_event_id, desired_tickets);
-			client.sendData(exchange_request);
-			exchange_request = client.getData();
+			// find out which box-office we need to contact
+			String boToContact = desired_event_id.substring(0,3);
+			ServerDetail remoteUDP = box_off_repo.get(boToContact);
 			
-			if(((Exchange) exchange_request).canExchange()) {
-				cancel(customer_id, reserved_event_id, reserved_tickets);
+			boolean valid_exchange = false;
+			
+			// make sure that the client has reserved the tickets at this box office first
+			if (desired_tickets <= this.available_shows.get(reserved_event_id).getReservation(customer_id)) {
+				valid_exchange = true;
 			}
-		}
-		catch(Exception e) {
-			e.printStackTrace();
-		}
+			
+			if(valid_exchange) {
+			
+				// Create a UDP client to contact the server
+				ReservationClient client = new ReservationClient(remoteUDP.getIp(), remoteUDP.getPort());
+				
+				// Create a new exchange object to pass to the server
+				IExchange exchange_request = new Reservation(customer_id, desired_event_id, desired_tickets);
+				
+				// Send the data to the server
+				client.sendData(exchange_request);
+				
+				// Get the response from the server
+				exchange_request = client.getData();
+				
+				// Apply business logic
+				if(((Reservation) exchange_request).isConfirmed()) {
+	
+					cancel(customer_id, reserved_event_id, reserved_tickets); // if the exchange succeeded, cancel
+					
+					String debug = String.format("Exchange completed\nCustomer\t%s\tCancelled %s tickets\nReserved %s tickets",customer_id,reserved_tickets,desired_tickets);
+					System.out.println(debug);
+				}
+			}
+			else {
+				String debug = String.format("Exchange failed\nCustomer\t%s\t did not cancel %s tickets\nand did not reserve %s tickets",customer_id,reserved_tickets,desired_tickets);
+				System.out.println(debug);
+			}
 	}
 
 	@Override
